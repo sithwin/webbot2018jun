@@ -9,14 +9,14 @@ var botbuilder_azure = require("botbuilder-azure");
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-   console.log('%s listening to %s', server.name, server.url); 
+    console.log('%s listening to %s', server.name, server.url);
 });
-  
+
 // Create chat connector for communicating with the Bot Framework Service
 var connector = new builder.ChatConnector({
     appId: process.env.MicrosoftAppId,
     appPassword: process.env.MicrosoftAppPassword,
-    openIdMetadata: process.env.BotOpenIdMetadata 
+    openIdMetadata: process.env.BotOpenIdMetadata
 });
 
 // Listen for messages from users 
@@ -45,6 +45,11 @@ bot.set('storage', tableStorage);
 var luisAppId = process.env.LuisAppId;
 var luisAPIKey = process.env.LuisAPIKey;
 var luisAPIHostName = process.env.LuisAPIHostName || 'westus.api.cognitive.microsoft.com';
+
+var qnaMakerHost = process.env.qnaMakerHost;
+var qnaMakerEndpointKey = process.env.qnaMakerEndpointKey;
+var qnaMakerSubscriptionKey = process.env.qnaMakerSubscriptionKey;
+var qnaMakerKbId = process.env.qnaMakerKbId;
 
 const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
 
@@ -81,3 +86,29 @@ bot.dialog('CancelDialog',
     matches: 'Cancel'
 })
 
+bot.dialog('CreditLimitDialog',
+    (session) => {
+        session.send('Your credit limit is 5000', session.message.text);
+        session.endDialog();
+    }
+).triggerAction({
+    matches: 'CreditLimit'
+})
+
+var cog = require('botbuilder-cognitivservices')
+var qnaRecognizer = new cog.QnAMakerRecognizer({
+    knowledgeBaseId: qnaMakerKbId,
+    subscriptionKey: qnaMakerSubscriptionKey
+});
+bot.recognizer(qnaRecognizer);
+
+bot.dialog('AzureVMQuestions', function (session, args) {
+    var query = session.message.text;
+    cog.QnAMakerRecognizer.recognize(query,
+        qnaMakerHost + '/knowledgebases/' + qnaMakerKbId + '/generateAnswer',
+        'EndpointKey ' + qnaMakerEndpointKey, 'Authorization', 1, 'AzureVMQuestions', (error, results) => {
+            session.send(results.answers[0].answer);
+        })
+}).triggerAction({
+    matches: 'AzureVMQuestions'
+})

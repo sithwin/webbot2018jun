@@ -95,7 +95,7 @@ bot.dialog('CreditLimitDialog',
     matches: 'CreditLimit'
 })
 
-var cog = require('botbuilder-cognitivservices')
+var cog = require('botbuilder-cognitiveservices')
 var qnaRecognizer = new cog.QnAMakerRecognizer({
     knowledgeBaseId: qnaMakerKbId,
     subscriptionKey: qnaMakerSubscriptionKey
